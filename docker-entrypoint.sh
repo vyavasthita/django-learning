@@ -21,6 +21,16 @@ while ! python manage.py migrate  2>&1; do
    sleep 3
 done
 
+python manage.py createcachetable
+
+if [ "$CREATE_SUPER_USER" ]
+then
+    python manage.py createsuperuser \
+        --noinput \
+        --username $DJANGO_SUPERUSER_USERNAME \
+        --email $DJANGO_SUPERUSER_EMAIL
+fi
+
 echo "Django docker is fully configured successfully."
 
 exec "$@"

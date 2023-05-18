@@ -16,34 +16,33 @@ def home(request):
 
     # result = Product.objects.aaggregate(count=Count('id'))
 
-    query_set = Customer.objects.annotate(new_id=Value(True))
-    full_name = Func(F('first_name'), Value(' '), F('last_name'), function='CONCAT')
-    full_name_2 = Concat('first_name', Value(' '), 'last_name')
+    # query_set = Customer.objects.annotate(new_id=Value(True))
+    # full_name = Func(F('first_name'), Value(' '), F('last_name'), function='CONCAT')
+    # full_name_2 = Concat('first_name', Value(' '), 'last_name')
 
-    discounted_price = ExpressionWrapper(F('unit_price') * 0.8, output_field=DecimalField())
+    # discounted_price = ExpressionWrapper(F('unit_price') * 0.8, output_field=DecimalField())
 
-    collection = Collection()
-    collection.title = 'Book'
-    collection.feature_product = Product(pk=1)
-    collection.save()
+    # collection = Collection()
+    # collection.title = 'Book'
+    # collection.feature_product = Product(pk=1)
+    # collection.save()
 
-    Collection.objects.filter(pk=11).update(featured_product=None)
+    # Collection.objects.filter(pk=11).update(feature_product=None)
 
-    with transaction.atomic():
-        order = Order()
-        order.customer_id = 1
-        order.save()
+    # with transaction.atomic():
+    #     order = Order()
+    #     order.customer_id = 1
+    #     order.save()
 
-        item = OrderItem()
-        item.order = order
-        item.product_id = 1
-        item.quantity = 1
-        item.unit_price = 10
-        item.save()
+    #     item = OrderItem()
+    #     item.order = order
+    #     item.product_id = 1
+    #     item.quantity = 1
+    #     item.unit_price = 10
+    #     item.save()
 
     # return render(request, 'home.html', 
     #               {'names': ['Lali Devi Sharma', 'Raja', 'Bhoomi', 'Samskriti', 'Sabhyata'], 
     #                'result': result})
     return render(request, 'home.html', 
-                  {'names': ['Lali Devi Sharma', 'Raja', 'Bhoomi', 'Samskriti', 'Sabhyata'], 
-                   'result': list(query_set)})
+                  {'names': ['Lali Devi Sharma', 'Raja', 'Bhoomi', 'Samskriti', 'Sabhyata']})

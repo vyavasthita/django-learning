@@ -11,6 +11,8 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
 from pathlib import Path
+import os
+
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -135,14 +137,8 @@ INTERNAL_IPS = [
 ]
 
 def show_toolbar_callback(*args, **kwargs):
-    return True
-    # if os.getenv("LOCAL_DEV"):
-    #     return True
-    # return False
+    return os.getenv("LOCAL_DEV", False)
 
 DEBUG_TOOLBAR_CONFIG = {
     'SHOW_TOOLBAR_CALLBACK': show_toolbar_callback,
 }
-
-# if "DOCKER_HOST" in os.environ:
-#     INTERNAL_IPS = [os.environ["DOCKER_HOST"]]

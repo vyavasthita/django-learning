@@ -47,5 +47,11 @@ services:
         condition: service_healthy
     networks: 
       - mysql-connection
+    environment:
+      - LOCAL_DEV=${LOCAL_DEV}
+      - CREATE_SUPER_USER=${CREATE_SUPER_USER}
+      - DJANGO_SUPERUSER_USERNAME=${DJANGO_SUPERUSER_USERNAME}
+      - DJANGO_SUPERUSER_EMAIL=${DJANGO_SUPERUSER_EMAIL}
+      - DJANGO_SUPERUSER_PASSWORD=${DJANGO_SUPERUSER_PASSWORD}
 networks:
   mysql-connection:
