@@ -12,7 +12,7 @@ services:
     command: --init-file /data/application/init.sql
     volumes:
       - ./init.sql:/data/application/init.sql
-      - ./database:/var/lib/mysql
+      - mysql-data:/var/lib/mysql
     healthcheck:
         test: ["CMD", "mysqladmin" ,"ping", "-h", "localhost"]
         timeout: 3s
@@ -55,3 +55,6 @@ services:
       - DJANGO_SUPERUSER_PASSWORD=${DJANGO_SUPERUSER_PASSWORD}
 networks:
   mysql-connection:
+
+volumes:
+  mysql-data:
