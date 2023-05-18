@@ -20,8 +20,4 @@ COPY . /app/
 
 RUN chmod +x /app/docker-entrypoint.sh
 
-# RUN [ "pip", "install", "-r", "requirements.txt" ]
-
 ENTRYPOINT [ "/app/docker-entrypoint.sh" ]
-
-# CMD ["python", "manage.py", "runserver", "0.0.0.0:5000"]
