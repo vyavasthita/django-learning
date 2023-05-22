@@ -2,25 +2,39 @@ from django.shortcuts import get_object_or_404
 from django.http import HttpResponse
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from .models import Product
-from .serializer import ProductSerializer
+from .models import Product, Collection
+from .serializer import ProductSerializer, CollectionSerializer
 from rest_framework import status
 from rest_framework.views import APIView
 from rest_framework.mixins import ListModelMixin, CreateModelMixin
 from rest_framework.generics import ListCreateAPIView
+from django.db.models.aggregates import Count
 
 
-class ProductList(APIView):
-    def get(self, request):
-        query_set = Product.objects.all()
-        serializer = ProductSerializer(query_set, many=True, context={'request': request})
-        return Response(serializer.data)
+class ProductList(ListCreateAPIView):
+    queryset = Product.objects.select_related('collection').all()
+    serializer_class = ProductSerializer
+
+    # def get_queryset(self):
+    #     return Product.objects.select_related('collection').all()
     
-    def post(self, request):
-        serializer = ProductSerializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        serializer.save()
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
+    # def get_serializer_class(self):
+    #     return ProductSerializer
+    
+    def get_serializer_context(self):
+        return {'request': self.request}
+
+# class ProductList(APIView):
+#     def get(self, request):
+#         query_set = Product.objects.all()
+#         serializer = ProductSerializer(query_set, many=True, context={'request': request})
+#         return Response(serializer.data)
+    
+#     def post(self, request):
+#         serializer = ProductSerializer(data=request.data)
+#         serializer.is_valid(raise_exception=True)
+#         serializer.save()
+#         return Response(serializer.data, status=status.HTTP_201_CREATED)
     
 class ProductDetail(APIView):
     def get(self, request, id):
@@ -90,6 +104,10 @@ class ProductDetail(APIView):
 #         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-@api_view()
-def collection_detail(request, pk):
-    return Response('Namaste')
+class CollectionList(ListCreateAPIView):
+    queryset = Collection.objects.annotate(product_count=Count('product')).all()
+    serializer_class = CollectionSerializer
+
+# @api_view()
+# def collection_detail(request, pk):
+#     return Response('Namaste')
