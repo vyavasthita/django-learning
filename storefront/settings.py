@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'rest_framework',
     'playground',
     'store',
     'tags',
@@ -83,7 +84,7 @@ WSGI_APPLICATION = 'storefront.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': 'storefront',
+        'NAME': 'storefront2',
         'HOST': 'mysql-db',
         'USER': 'root',
         'PORT': '3306',
@@ -141,4 +142,16 @@ def show_toolbar_callback(*args, **kwargs):
 
 DEBUG_TOOLBAR_CONFIG = {
     'SHOW_TOOLBAR_CALLBACK': show_toolbar_callback,
+}
+
+# REST_FRAMEWORK = {'COERCE_DECIMAL_TO_STRING': False}
+
+
+
+
+
+REST_FRAMEWORK = {
+    'COERCE_DECIMAL_TO_STRING': False,
+    # Your other settings
+
 }
