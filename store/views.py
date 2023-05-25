@@ -1,21 +1,30 @@
 from django.shortcuts import get_object_or_404
 from django.http import HttpResponse
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
-from .models import Product, Collection, OrderItem, Review, Cart, CartItem
-from .serializer import ProductSerializer, CollectionSerializer, ReviewSerializer, CartSerializer, CartItemSerializer, AddCartItemSerializer, UpdateCartItemSerializer
+from django.db.models.aggregates import Count
+from django_filters.rest_framework import DjangoFilterBackend
+
 from rest_framework import status
 from rest_framework.views import APIView
-from rest_framework.mixins import ListModelMixin, CreateModelMixin, RetrieveModelMixin, DestroyModelMixin
+from rest_framework.mixins import ListModelMixin, CreateModelMixin, RetrieveModelMixin, UpdateModelMixin, DestroyModelMixin
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
-from django.db.models.aggregates import Count
+from rest_framework.decorators import action
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
-from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.filters import SearchFilter, OrderingFilter
-from .filters import ProductFilter, CartFilter
 from rest_framework.pagination import PageNumberPagination
-from .pagination import DefaultPagination
 from rest_framework.mixins import CreateModelMixin
+from rest_framework.decorators import api_view
+from rest_framework.response import Response
+from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
+
+
+from .models import Product, Collection, OrderItem, Review, Cart, CartItem, Customer
+from .serializer import ProductSerializer, CollectionSerializer, \
+    ReviewSerializer, CartSerializer, CartItemSerializer, \
+        AddCartItemSerializer, UpdateCartItemSerializer, \
+        CustomerSerializer
+from .filters import ProductFilter, CartFilter
+from .pagination import DefaultPagination
+from .permissions import IsAdminOrReadOnly, FullDjangoModelPermission, ViewCustomerHistoryPermission
 
 
 class ProductViewSet(ModelViewSet):
@@ -26,6 +35,7 @@ class ProductViewSet(ModelViewSet):
     search_fields = ['title', 'description']
     ordering_fields = ['unit_price', 'last_update']
     pagination_class = DefaultPagination
+    permission_classes = [IsAdminOrReadOnly]
     # filtersets_fields = ['collection_id']
 
     # def get_queryset(self):
@@ -50,6 +60,7 @@ class ProductViewSet(ModelViewSet):
 class CollectionViewSet(ModelViewSet):
     queryset = Collection.objects.annotate(product_count=Count('product')).all()
     serializer_class = CollectionSerializer
+    permission_classes = [IsAdminOrReadOnly]
 
     def delete(self, request, pk):
         collection = get_object_or_404(Collection, pk=pk)
@@ -88,6 +99,35 @@ class CartItemViewSet(ModelViewSet):
 
     def get_queryset(self):
         return CartItem.objects.filter(cart_id=self.kwargs['cart_pk']).select_related('product')
+
+class CustomerViewSet(ModelViewSet):
+    queryset = Customer.objects.all()
+    serializer_class = CustomerSerializer
+    permission_classes = [IsAdminUser]
+    # permission_classes = [FullDjangoModelPermission]
+
+    def get_permissions(self):
+        if self.request.method == 'GET':
+            return [AllowAny()]
+        return [IsAuthenticated()]
+    
+    @action(detail=True, permission_classes=[ViewCustomerHistoryPermission])
+    def history(self, request, pk):
+        return Response('ok')
+
+    @action(detail=False, methods=['GET', 'PUT'], permission_classes=[IsAuthenticated])
+    def me(self, request):
+        (customer, created) = Customer.objects.get_or_create(user_id=request.user.id)
+
+        if request.method == 'GET':
+            serializer = CustomerSerializer(customer)
+            return Response(serializer.data)
+        elif request.method == 'PUT':
+            serializer = CustomerSerializer(customer, data=request.data)
+            serializer.is_valid(raise_exception=True)
+            serializer.save()
+            return Response(serializer.data)
+
 
 # class CollectionList(ListCreateAPIView):
 #     queryset = Collection.objects.annotate(product_count=Count('product')).all()
