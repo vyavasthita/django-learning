@@ -2,6 +2,7 @@ from decimal import Decimal
 from django.db import transaction
 from rest_framework import serializers
 from .models import Product, Collection, Review, Cart, CartItem, Customer, Order, OrderItem
+from .signals import order_created
 
 
 class CollectionSerializer(serializers.ModelSerializer):
@@ -161,7 +162,7 @@ class CreateOrderSerializer(serializers.Serializer):
         user_id = self.context['user_id']
 
         with transaction.atomic():
-            (customer, created) = Customer.objects.get_or_create(user_id = user_id)
+            customer = Customer.objects.get(user_id = user_id)
             order = Order.objects.create(customer=customer)
 
             cart_items = CartItem.objects.select_related('product').filter(cart_id=cart_id)
@@ -179,5 +180,7 @@ class CreateOrderSerializer(serializers.Serializer):
             OrderItem.objects.bulk_create(order_items)
 
             Cart.objects.filter(pk=cart_id).delete()
+
+            order_created.send_robust(sender=self.__class__, order = order)
 
             return order
