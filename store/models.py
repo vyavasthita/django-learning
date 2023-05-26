@@ -84,18 +84,21 @@ class Order(models.Model):
     ]
     placed_at = models.DateTimeField(auto_now_add=True)
     payment_status = models.CharField(max_length=1, choices=PAYMENT_STATUS_CHOICES, default=PAYMENT_STATUS_PENDING)
-    customer = models.ForeignKey(Customer, on_delete=models.PROTECT)
-
+    customer = models.ForeignKey(Customer, on_delete=models.PROTECT, related_name='orders')
+    
     class Meta:
         permissions = [
             ('cancel_order', 'The User can cancel order')
         ]
 
+    def __str__(self) -> str:
+        return f"{self.payment_status} Order by {self.customer.user.first_name}"
+
 class OrderItem(models.Model):
-    order = models.ForeignKey(Order, on_delete=models.PROTECT)
+    order = models.ForeignKey(Order, on_delete=models.PROTECT, related_name='items')
     product = models.ForeignKey(Product, on_delete=models.PROTECT)
-    quantity = models.PositiveSmallIntegerField()
     unit_price = models.DecimalField(max_digits=6, decimal_places=2)
+    quantity = models.PositiveSmallIntegerField()
 
 class Cart(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid4)

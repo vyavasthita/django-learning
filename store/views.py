@@ -5,7 +5,9 @@ from django_filters.rest_framework import DjangoFilterBackend
 
 from rest_framework import status
 from rest_framework.views import APIView
-from rest_framework.mixins import ListModelMixin, CreateModelMixin, RetrieveModelMixin, UpdateModelMixin, DestroyModelMixin
+from rest_framework.mixins import ListModelMixin, CreateModelMixin, \
+    RetrieveModelMixin, UpdateModelMixin, \
+        DestroyModelMixin, ListModelMixin
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.decorators import action
 from rest_framework.viewsets import ModelViewSet, GenericViewSet
@@ -17,11 +19,12 @@ from rest_framework.response import Response
 from rest_framework.permissions import AllowAny, IsAuthenticated, IsAdminUser
 
 
-from .models import Product, Collection, OrderItem, Review, Cart, CartItem, Customer
+from .models import Product, Collection, Order, OrderItem, Review, Cart, CartItem, Customer
 from .serializer import ProductSerializer, CollectionSerializer, \
     ReviewSerializer, CartSerializer, CartItemSerializer, \
         AddCartItemSerializer, UpdateCartItemSerializer, \
-        CustomerSerializer
+        CustomerSerializer, OrderSerializer, OrderItemSerializer, \
+        CreateOrderSerializer, UpdateOrderSerializer
 from .filters import ProductFilter, CartFilter
 from .pagination import DefaultPagination
 from .permissions import IsAdminOrReadOnly, FullDjangoModelPermission, ViewCustomerHistoryPermission
@@ -79,7 +82,7 @@ class ReviewViewSet(ModelViewSet):
     def get_queryset(self):
         return Review.objects.filter(product_id=self.kwargs['product_pk'])
 
-class CartViewSet(CreateModelMixin, RetrieveModelMixin, DestroyModelMixin, GenericViewSet):
+class CartViewSet(CreateModelMixin, RetrieveModelMixin, ListModelMixin, DestroyModelMixin, GenericViewSet):
     queryset = Cart.objects.all()
     serializer_class = CartSerializer
 
@@ -128,7 +131,46 @@ class CustomerViewSet(ModelViewSet):
             serializer.save()
             return Response(serializer.data)
 
+class OrderViewSet(ModelViewSet):
+    # permission_classes = [IsAuthenticated]
 
+    http_method_names = ['get', 'patch', 'delete', 'head', 'optionos']
+
+    def get_permissions(self):
+        if self.request.method in ['PATCH', 'DELETE']:
+            return [IsAdminUser()]
+        
+        return [IsAuthenticated()]
+
+    def create(self, request, *args, **kwargs):
+        serializer = CreateOrderSerializer(data=request.data, 
+                                           context = {'user_id': self.request.user.id})
+        serializer.is_valid(raise_exception=True)
+        order = serializer.save()
+        serializer = OrderSerializer(order)
+        return Response(serializer.data)
+
+    def get_serializer_class(self):
+        if self.request.method == 'POST':
+            return CreateOrderSerializer
+        elif self.request.method == 'PATCH':
+            return UpdateOrderSerializer        
+        return OrderSerializer
+    
+    def get_queryset(self):
+        if self.request.user.is_staff:
+            return Order.objects.all()
+        
+        (customer_id, created) = Customer.objects.only('id').get_or_create(user_id = self.request.user.id)
+        return Order.objects.filter(customer_id=customer_id)
+
+    def get_serializer_context(self):
+        return {'user_id': self.request.user.id}
+
+class OrderItemViewSet(ModelViewSet):
+    queryset = OrderItem.objects.all()
+    serializer_class = OrderItemSerializer
+        
 # class CollectionList(ListCreateAPIView):
 #     queryset = Collection.objects.annotate(product_count=Count('product')).all()
 #     serializer_class = CollectionSerializer
